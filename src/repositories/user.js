@@ -1,5 +1,16 @@
 const User = require('../models/user');
 
+const login = async (req, res) => {
+    const { body } = req;
+    try {
+        const user = await User.findByCredentials(body.email, body.password);
+        res.status(200).send(user);
+    } catch (e) {
+        console.log(e);
+        res.status(500).send(e);
+    }
+}
+
 const getMany = async (req, res) => {
     try {
         const users = await User.find({});
@@ -35,19 +46,19 @@ const updateOne = async (req, res) => {
     const { body, params } = req;
     const updates = Object.keys(body);
     const allowedUpdates = ['name', 'email', 'password'];
-    const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
+    const isValidOperation = updates.every((update) =>
+        allowedUpdates.includes(update)
+    );
     if (!isValidOperation) {
         return res.status(400).send({ error: 'Invalid update!' });
     }
     try {
-        const user = await User.findByIdAndUpdate(
-            params.id,
-            body,
-            { new: true, runValidators: true }
-        );
+        const user = await User.findById(params.id);
         if (!user) {
             return res.status(404).send();
         }
+        updates.forEach((update) => user[update] = body[update]);
+        await user.save();
         res.status(200).send(user);
     } catch (e) {
         res.status(500).send(e);
@@ -66,4 +77,7 @@ const deleteOne = async (req, res) => {
     }
 }
 
-module.exports = { getMany, getSingle, create, updateOne, deleteOne };
+module.exports = {
+    getMany, getSingle, create,
+    updateOne, deleteOne, login
+};

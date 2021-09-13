@@ -1,9 +1,10 @@
 const express = require('express');
 const { getMany, getSingle, create,
-    updateOne, deleteOne } = require('../repositories/user');
+    updateOne, deleteOne, login } = require('../repositories/user');
 
 const router = new express.Router();
 
+router.post('/users/login', (req, res) => login(req, res));
 router.get('/users', (req, res) => getMany(req, res));
 router.get('/users/:id', (req, res) => getSingle(req, res));
 router.post('/users', async (req, res) => create(req, res));
