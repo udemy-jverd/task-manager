@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -30,8 +31,20 @@ const userSchema = new mongoose.Schema({
                 throw new Error('Password cannot contain "password"!');
             }
         }
-    }
+    }, tokens: [{
+        token: {
+            type: String,
+            required: true
+        }
+    }]
 });
+
+// static methods are accessibles from the model and instance methods are accessibles from instances
+userSchema.methods.generateAuthToken = function () {
+    const user = this;
+    const token = jwt.sign({ _id: user._id.toString() }, 'secretKey');
+    return token;
+}
 
 // Here we create the findByCredentials method in the User object
 userSchema.statics.findByCredentials = async (email, password) => {

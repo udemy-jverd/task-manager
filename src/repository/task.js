@@ -1,4 +1,4 @@
-const Task = require('../models/task');
+const Task = require('../model/task');
 
 const getMany = async (req, res) => {
     try {

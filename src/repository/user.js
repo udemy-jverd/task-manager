@@ -1,23 +1,31 @@
-const User = require('../models/user');
+const User = require('../model/user');
 
 const login = async (req, res) => {
     const { body } = req;
     try {
         const user = await User.findByCredentials(body.email, body.password);
-        res.status(200).send(user);
+        const token = await user.generateAuthToken();
+        user.tokens = user.tokens.concat({ token });
+        res.status(200).send({ user, token });
     } catch (e) {
-        console.log(e);
         res.status(500).send(e);
     }
 }
 
-const getMany = async (req, res) => {
+const signup = async (req, res) => {
+    const user = new User(req.body);
     try {
-        const users = await User.find({});
-        res.status(200).send(users);
+        const token = await user.generateAuthToken();
+        user.tokens = user.tokens.concat({ token });
+        const newUser = await user.save();
+        res.status(200).send({ newUser, token });
     } catch (e) {
         res.status(500).send(e);
     }
+}
+
+const me = async (req, res) => {
+    res.status(200).send(req.user);
 }
 
 const getSingle = async (req, res) => {
@@ -27,16 +35,6 @@ const getSingle = async (req, res) => {
             return res.status(404).send();
         }
         res.status(200).send(user);
-    } catch (e) {
-        res.status(500).send(e);
-    }
-}
-
-const create = async (req, res) => {
-    const user = new User(req.body);
-    try {
-        const newUser = await user.save();
-        res.status(201).send(newUser);
     } catch (e) {
         res.status(500).send(e);
     }
@@ -78,6 +76,6 @@ const deleteOne = async (req, res) => {
 }
 
 module.exports = {
-    getMany, getSingle, create,
+    me, getSingle, signup,
     updateOne, deleteOne, login
 };
