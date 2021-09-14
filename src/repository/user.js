@@ -1,29 +1,5 @@
 const User = require('../model/user');
 
-const login = async (req, res) => {
-    const { body } = req;
-    try {
-        const user = await User.findByCredentials(body.email, body.password);
-        const token = await user.generateAuthToken();
-        user.tokens = user.tokens.concat({ token });
-        res.status(200).send({ user, token });
-    } catch (e) {
-        res.status(500).send(e);
-    }
-}
-
-const signup = async (req, res) => {
-    const user = new User(req.body);
-    try {
-        const token = await user.generateAuthToken();
-        user.tokens = user.tokens.concat({ token });
-        const newUser = await user.save();
-        res.status(200).send({ newUser, token });
-    } catch (e) {
-        res.status(500).send(e);
-    }
-}
-
 const me = async (req, res) => {
     res.status(200).send(req.user);
 }
@@ -75,7 +51,4 @@ const deleteOne = async (req, res) => {
     }
 }
 
-module.exports = {
-    me, getSingle, signup,
-    updateOne, deleteOne, login
-};
+module.exports = { me, getSingle, updateOne, deleteOne };
