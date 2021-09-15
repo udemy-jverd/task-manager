@@ -1,8 +1,18 @@
 const Task = require('../model/task');
 
+const create = async (req, res) => {
+    const task = new Task({ ...req.body, owner: req.user._id });
+    try {
+        const newTask = await task.save();
+        res.status(201).send(newTask);
+    } catch (e) {
+        res.status(500).send(e);
+    }
+}
+
 const getMany = async (req, res) => {
     try {
-        const tasks = await Task.find({});
+        const tasks = await Task.find({ owner: req.user._id });
         res.status(200).send(tasks);
     } catch (e) {
         res.status(500).send(e);
@@ -10,22 +20,13 @@ const getMany = async (req, res) => {
 }
 
 const getSingle = async (req, res) => {
-    const task = await Task.findById(req.params.id);
+    const taskId = req.params.id;
     try {
+        const task = await Task.findOne({ _id: taskId, owner: req.user._id });
         if (!task) {
             return res.status(404).send();
         }
         res.status(200).send(task);
-    } catch (e) {
-        return res.status(200).send(task);
-    }
-}
-
-const create = async (req, res) => {
-    const task = new Task(req.body);
-    try {
-        const newTask = await task.save();
-        res.status(201).send(newTask);
     } catch (e) {
         res.status(500).send(e);
     }
@@ -40,14 +41,12 @@ const updateOne = async (req, res) => {
         return res.status(400).send({ error: 'Invalid update!' });
     }
     try {
-        const task = await Task.findByIdAndUpdate(
-            params.id,
-            body,
-            { new: true, runValidators: true }
-        );
+        const task = await Task.findOne({ _id: params.id, owner: req.user._id });
         if (!task) {
             return res.status(404).send();
         }
+        updates.forEach((update) => task[update] = req.body[update]);
+        await task.save();
         res.status(200).send(task);
     } catch (e) {
         res.status(500).send(e);
@@ -56,7 +55,10 @@ const updateOne = async (req, res) => {
 
 const deleteOne = async (req, res) => {
     try {
-        const task = await Task.findByIdAndDelete(req.params.id);
+        const task = await Task.findOneAndDelete({
+            id: req.params.id,
+            owner: req.user._id
+        });
         if (!task) {
             return res.status(404).send();
         }
@@ -66,4 +68,4 @@ const deleteOne = async (req, res) => {
     }
 }
 
-module.exports = { getMany, getSingle, create, updateOne, deleteOne };
+module.exports = { create, getMany, getSingle, updateOne, deleteOne };

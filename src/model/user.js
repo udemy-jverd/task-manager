@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const Task = require('../model/task');
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -39,6 +40,13 @@ const userSchema = new mongoose.Schema({
     }]
 });
 
+// Allow accessing the tasks directly from the User model
+userSchema.virtual('tasks', {
+    ref: 'Task',
+    localField: '_id',
+    foreignField: 'owner'
+});
+
 // static methods are accessibles from the model and instance methods are accessibles from instances
 userSchema.methods.generateAuthToken = function () {
     const user = this;
@@ -73,6 +81,12 @@ userSchema.pre('save', async function (next) {
     if (this.isModified('password')) {
         this.password = await bcrypt.hash(this.password, 8);
     }
+    next();
+});
+
+// This middleware remove the user tasks when it profile is deleted
+userSchema.pre('remove', async function (next) {
+    await Task.deleteMany({ owner: this._id });
     next();
 });
 
