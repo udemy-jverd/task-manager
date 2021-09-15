@@ -1,4 +1,5 @@
-const User = require('../model/user');
+const Task = require('../model/task');
+const { hash } = require('../utils/encryption');
 
 const me = async (req, res) => {
     res.status(200).send(req.user);
@@ -16,6 +17,10 @@ const updateFields = async (req, res) => {
     }
     try {
         updates.forEach((update) => user[update] = body[update]);
+        if (body['password']) {
+            console.log(body['password']);
+            user['password'] = await hash(body['password']);
+        }
         await user.save();
         res.status(200).send(user);
     } catch (e) {
@@ -26,6 +31,7 @@ const updateFields = async (req, res) => {
 const deleteOne = async (req, res) => {
     const { user } = req;
     try {
+        await Task.deleteMany({ owner: user._id });
         await user.remove();
         res.status(203).send(user);
     } catch (e) {

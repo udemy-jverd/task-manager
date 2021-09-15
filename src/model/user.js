@@ -1,8 +1,5 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const Task = require('../model/task');
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -47,13 +44,6 @@ userSchema.virtual('tasks', {
     foreignField: 'owner'
 });
 
-// static methods are accessibles from the model and instance methods are accessibles from instances
-userSchema.methods.generateAuthToken = function () {
-    const user = this;
-    const token = jwt.sign({ _id: user._id.toString() }, 'secretKey');
-    return token;
-}
-
 // toJSON method run even we never call it explicitly
 userSchema.methods.toJSON = function () {
     const user = this.toObject();
@@ -61,34 +51,6 @@ userSchema.methods.toJSON = function () {
     delete user.tokens;
     return user;
 }
-
-// Here we create the findByCredentials method in the User object
-userSchema.statics.findByCredentials = async (email, password) => {
-    const user = await User.findOne({ email });
-    if (!user) {
-        throw new Error('Unable to login!');
-    }
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-        throw new Error('Unable to login!');
-    }
-    return user;
-}
-
-// This middleware hash the plain text password before saving
-userSchema.pre('save', async function (next) {
-    // using default function instead of arrow to bind this
-    if (this.isModified('password')) {
-        this.password = await bcrypt.hash(this.password, 8);
-    }
-    next();
-});
-
-// This middleware remove the user tasks when it profile is deleted
-userSchema.pre('remove', async function (next) {
-    await Task.deleteMany({ owner: this._id });
-    next();
-});
 
 const User = mongoose.model('User', userSchema);
 
