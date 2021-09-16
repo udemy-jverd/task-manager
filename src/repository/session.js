@@ -18,7 +18,7 @@ const login = async (req, res) => {
         await user.save();
         res.status(200).send({ user, token });
     } catch (e) {
-        res.status(500).send(e);
+        res.status(400).send({ error: e.message });
     }
 }
 

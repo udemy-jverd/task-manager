@@ -1,4 +1,6 @@
+const sharp = require('sharp');
 const Task = require('../model/task');
+const User = require('../model/user');
 const { hash } = require('../utils/encryption');
 
 const me = async (req, res) => {
@@ -39,4 +41,46 @@ const deleteOne = async (req, res) => {
     }
 }
 
-module.exports = { me, updateFields, deleteOne };
+const getProfilePicture = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const user = await User.findById(id);
+        if (!user || !user.avatar) {
+            throw new Error('Unable to find the user or the profile picture!');
+        }
+        res.set('Content-Type', 'image/png');
+        res.status(200).send(user.avatar);
+    } catch (e) {
+        res.status(404).send({ error: e.message });
+    }
+}
+
+const uploadPicture = async (req, res) => {
+    const { user, file } = req;
+    try {
+        user.avatar = await sharp(file.buffer).resize({
+            width: 250,
+            height: 250
+        }).png().toBuffer();
+        await user.save();
+        res.status(200).send();
+    } catch (e) {
+        res.status(500).send(e);
+    }
+}
+
+const deletePicture = async (req, res) => {
+    const { user } = req;
+    try {
+        user.avatar = null;
+        await user.save();
+        res.status(200).send();
+    } catch (e) {
+        res.status(500).send(e);
+    }
+}
+
+module.exports = {
+    me, updateFields, deleteOne,
+    getProfilePicture, uploadPicture, deletePicture
+};
