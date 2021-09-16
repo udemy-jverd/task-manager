@@ -10,9 +10,6 @@ const create = async (req, res) => {
     }
 }
 
-// GET /tasks?completed=true
-// GET /tasks?limit=10&skip=0
-// GET /tasks?sortBy=createdAt:asc
 const getMany = async (req, res) => {
     const { query } = req;
     let builtQuery = { owner: req.user._id }
