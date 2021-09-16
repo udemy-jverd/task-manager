@@ -35,6 +35,8 @@ const userSchema = new mongoose.Schema({
             required: true
         }
     }]
+}, {
+    timestamps: true
 });
 
 // Allow accessing the tasks directly from the User model

@@ -10,9 +10,30 @@ const create = async (req, res) => {
     }
 }
 
+// GET /tasks?completed=true
+// GET /tasks?limit=10&skip=0
+// GET /tasks?sortBy=createdAt:asc
 const getMany = async (req, res) => {
+    const { query } = req;
+    let builtQuery = { owner: req.user._id }
+    if (query.completed) {
+        builtQuery = { ...query, completed: query.completed };
+    }
+    const sort = {};
+    if (query.sortBy) {
+        const parts = query.sortBy.split(':');
+        sort[parts[0]] = parts[1] === 'desc' ? -1 : 1;
+    }
     try {
-        const tasks = await Task.find({ owner: req.user._id });
+        const tasks = await Task.find(
+            builtQuery,
+            null,
+            {
+                limit: parseInt(query.limit),
+                skip: parseInt(query.skip),
+                sort
+            }
+        );
         res.status(200).send(tasks);
     } catch (e) {
         res.status(500).send(e);
