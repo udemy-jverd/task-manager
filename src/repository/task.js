@@ -65,7 +65,7 @@ const updateOne = async (req, res) => {
         }
         updates.forEach((update) => task[update] = req.body[update]);
         await task.save();
-        res.status(200).send(task);
+        res.status(202).send(task);
     } catch (e) {
         res.status(500).send(e);
     }
@@ -80,7 +80,7 @@ const deleteOne = async (req, res) => {
         if (!task) {
             return res.status(404).send();
         }
-        res.status(203).send(task);
+        res.status(204).send(task);
     } catch (e) {
         res.status(500).send(e);
     }

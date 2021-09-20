@@ -9,7 +9,7 @@ const login = async (req, res) => {
         if (!user) {
             throw new Error('Unable to login!');
         }
-        const rightPassword = isMatching(body.password, user.password);
+        const rightPassword = await isMatching(body.password, user.password);
         if (!rightPassword) {
             throw new Error('Unable to login!');
         }
@@ -29,7 +29,7 @@ const signup = async (req, res) => {
         user.tokens = user.tokens.concat({ token });
         user.password = await hash(req.body.password);
         await user.save();
-        res.status(200).send({ user, token });
+        res.status(201).send({ user, token });
     } catch (e) {
         res.status(500).send(e);
     }

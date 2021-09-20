@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 
-const isMatching = (string, hash) => {
-    const isMatch = bcrypt.compare(string, hash);
+const isMatching = async (string, hash) => {
+    const isMatch = await bcrypt.compare(string, hash);
     return isMatch;
 }
 

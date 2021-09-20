@@ -35,7 +35,7 @@ const deleteOne = async (req, res) => {
     try {
         await Task.deleteMany({ owner: user._id });
         await user.remove();
-        res.status(203).send(user);
+        res.status(204).send(user);
     } catch (e) {
         res.status(500).send(e);
     }
@@ -63,7 +63,7 @@ const uploadPicture = async (req, res) => {
             height: 250
         }).png().toBuffer();
         await user.save();
-        res.status(200).send();
+        res.status(202).send();
     } catch (e) {
         res.status(500).send(e);
     }
@@ -74,7 +74,7 @@ const deletePicture = async (req, res) => {
     try {
         user.avatar = null;
         await user.save();
-        res.status(200).send();
+        res.status(204).send();
     } catch (e) {
         res.status(500).send(e);
     }
