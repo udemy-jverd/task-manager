@@ -1,45 +1,27 @@
 const request = require('supertest');
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
 const app = require('../src/app');
 const User = require('../src/model/user');
-const { hash } = require('../src/utils/encryption');
+const { firstUserId, firstUser, populateDatabase } = require('./fixtures/db');
 
-const userOneId = new mongoose.Types.ObjectId();
-const firstUser = {
-    _id: userOneId,
-    name: 'Test',
-    email: 'test@gmail.com',
-    password: '1234567890',
-    tokens: [{
-        token: jwt.sign({ _id: userOneId }, process.env.JWT_SECRET)
-    }]
-}
-const secondUser = {
-    name: 'Andrew',
-    email: 'andrew@gmail.com',
-    password: '1234567890'
-}
-
-beforeEach(async () => {
-    await User.deleteMany();
-    const user = await new User(firstUser);
-    user.password = await hash(firstUser.password);
-    user.save();
-});
+beforeEach(populateDatabase);
 
 test('Should signup new user', async () => {
-    const response = await request(app).post('/signup').send(secondUser).expect(201);
+    const newUser = {
+        name: 'Andrew',
+        email: 'andrew@gmail.com',
+        password: '1234567890',
+    }
+    const response = await request(app).post('/signup').send(newUser).expect(201);
     const user = await User.findById(response.body.user._id);
     expect(user).not.toBeNull();
     expect(response.body).toMatchObject({
         user: {
-            name: secondUser.name,
-            email: secondUser.email,
+            name: newUser.name,
+            email: newUser.email,
         },
         token: user.tokens[0].token
     });
-    expect(user.password).not.toBe(secondUser.password);
+    expect(user.password).not.toBe(newUser.password);
 });
 test('Should fail to signup an existing user', async () => {
     await request(app).post('/signup').send(firstUser).expect(500);
@@ -50,7 +32,7 @@ test('Should login an existing user', async () => {
         email: firstUser.email,
         password: firstUser.password
     }).expect(200);
-    const user = await User.findById(userOneId);
+    const user = await User.findById(firstUserId);
     expect(response.body.token).toBe(user.tokens[1].token);
 });
 test('Should not login a non-existing user', async () => {
@@ -88,4 +70,30 @@ test('Should delete account for user', async () => {
 });
 test('Should not delete account for user without bearer', async () => {
     await request(app).delete('/users/me').send().expect(401);
+});
+
+test('Should upload an avatar picture', async () => {
+    await request(app).post('/users/me/avatar')
+        .set('Authorization', `Bearer ${firstUser.tokens[0].token}`)
+        .attach('avatar', 'test/fixtures/profile-picture.jpg')
+        .expect(202);
+    const user = await User.findById(firstUserId);
+    // check if the avatar propertie is a buffer
+    expect(user.avatar).toEqual(expect.any(Buffer));
+});
+
+test('Should update valid fields', async () => {
+    const newName = 'Bobby';
+    await request(app).patch('/users/me')
+        .set('Authorization', `Bearer ${firstUser.tokens[0].token}`)
+        .send({ name: newName })
+        .expect(200);
+    const user = await User.findById(firstUserId);
+    expect(user.name).toBe(newName);
+});
+test('Should not update invalid fields', async () => {
+    await request(app).patch('/users/me')
+        .set('Authorization', `Bearer ${firstUser.tokens[0].token}`)
+        .send({ token: 'hack' })
+        .expect(400);
 });
